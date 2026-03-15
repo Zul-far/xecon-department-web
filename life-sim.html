@@ -327,18 +327,6 @@
       return merged;
     }
 
-    function retuneEntity(entity, nextKind) {
-      const spec = species[nextKind];
-      const speed = Math.hypot(entity.vx, entity.vy) || spec.speed;
-      entity.kind = nextKind;
-      entity.generation = Math.max(1, entity.generation - 1);
-      entity.radius = spec.baseRadius + entity.generation * 0.8 + rand(-1.2, 1.2);
-      entity.energy = Math.max(35, entity.energy * 0.7);
-      entity.cooldown = 18;
-      entity.vx = (entity.vx / speed) * spec.speed * rand(0.85, 1.2);
-      entity.vy = (entity.vy / speed) * spec.speed * rand(0.85, 1.2);
-    }
-
     function decayTarget(kind) {
       if (kind === "triangle") return "circle";
       if (kind === "hex") return "square";
@@ -348,9 +336,25 @@
     function decayEntity(entity, reason) {
       const oldKind = entity.kind;
       const nextKind = decayTarget(entity.kind);
-      if (nextKind === entity.kind) return;
-      retuneEntity(entity, nextKind);
+      if (nextKind === entity.kind) return [entity];
+      const generation = Math.max(1, entity.generation - 1);
+      const spread = species[nextKind].baseRadius * 1.8;
+      const angle = rand(0, Math.PI * 2);
+      const dx = Math.cos(angle) * spread;
+      const dy = Math.sin(angle) * spread;
+      const childA = createEntity(nextKind, generation, entity.x - dx, entity.y - dy);
+      const childB = createEntity(nextKind, generation, entity.x + dx, entity.y + dy);
+      const repel = 2.8;
+      childA.vx = entity.vx * 0.3 - Math.cos(angle) * repel;
+      childA.vy = entity.vy * 0.3 - Math.sin(angle) * repel;
+      childB.vx = entity.vx * 0.3 + Math.cos(angle) * repel;
+      childB.vy = entity.vy * 0.3 + Math.sin(angle) * repel;
+      childA.energy = Math.max(40, entity.energy * 0.45);
+      childB.energy = Math.max(40, entity.energy * 0.45);
+      childA.cooldown = 32;
+      childB.cooldown = 32;
       pushLog(`${oldKind} decayed into ${nextKind}${reason ? " via " + reason : ""}`);
+      return [childA, childB];
     }
 
     function drawEntity(entity) {
@@ -449,10 +453,18 @@
         const mergeRule = mergeRules[pairKey(a.kind, b.kind)];
 
         if (pairKey(a.kind, b.kind) === "hex:triangle") {
-          decayEntity(a, "hex-triangle collision");
-          decayEntity(b, "hex-triangle collision");
+          return {
+            removeIds: [a.id, b.id],
+            additions: [
+              ...decayEntity(a, "hex-triangle collision"),
+              ...decayEntity(b, "hex-triangle collision")
+            ]
+          };
         } else if (mergeRule && a.cooldown <= 0 && b.cooldown <= 0 && Math.random() < mergeRule.chance) {
-          return mergeEntities(a, b, mergeRule.result);
+          return {
+            removeIds: [a.id, b.id],
+            additions: [mergeEntities(a, b, mergeRule.result)]
+          };
         } else if (mergeRule) {
           impulse *= mergeRule.bounceMultiplier;
         }
@@ -488,9 +500,10 @@
       entity.energy -= unstable ? 0.18 + entity.generation * 0.03 : 0.03;
       entity.cooldown -= 1;
       if (unstable && (entity.energy <= 20 || Math.random() < 0.0015)) {
-        decayEntity(entity, "instability");
+        return decayEntity(entity, "instability");
       }
       bounce(entity);
+      return null;
     }
 
     function spawnWorld() {
@@ -530,25 +543,32 @@
         const a = entities[i];
         if (removed.has(a.id)) continue;
 
-        updateEntity(a);
+        const decayChildren = updateEntity(a);
+        if (decayChildren) {
+          removed.add(a.id);
+          additions.push(...decayChildren);
+          continue;
+        }
 
         for (let j = i + 1; j < entities.length; j += 1) {
           const b = entities[j];
           if (removed.has(b.id)) continue;
-          const merged = interact(a, b);
-          if (merged) {
-            removed.add(a.id);
-            removed.add(b.id);
-            additions.push(merged);
-            sim.merges += 1;
-            sim.generationPeak = Math.max(sim.generationPeak, merged.generation);
-            pushLog(`${a.kind} + ${b.kind} -> ${merged.kind} g${merged.generation}`);
+          const outcome = interact(a, b);
+          if (outcome) {
+            for (const id of outcome.removeIds) removed.add(id);
+            additions.push(...outcome.additions);
+            if (outcome.additions.length === 1) {
+              const merged = outcome.additions[0];
+              sim.merges += 1;
+              sim.generationPeak = Math.max(sim.generationPeak, merged.generation);
+              pushLog(`${a.kind} + ${b.kind} -> ${merged.kind} g${merged.generation}`);
+            }
             break;
           }
         }
       }
 
-      let next = entities.filter(entity => !removed.has(entity.id) && entity.energy > 0 && entity.age < 5000);
+      let next = entities.filter(entity => !removed.has(entity.id));
       next.push(...additions);
 
       if (next.length < 8) {
