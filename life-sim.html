@@ -220,10 +220,10 @@
         </div>
 
         <div class="legend">
-          <div class="legend-item"><span class="swatch" style="background:#5bc0eb"></span>Circle: stable drifter</div>
-          <div class="legend-item"><span class="swatch" style="background:#7dd87d"></span>Square: strong magnetism</div>
-          <div class="legend-item"><span class="swatch" style="background:#f4a261"></span>Triangle: aggressive mover</div>
-          <div class="legend-item"><span class="swatch" style="background:#e76f51"></span>Hex: fused higher-form</div>
+          <div class="legend-item"><span class="swatch" style="background:#5bc0eb"></span>Circle: stable, attracts stable, may merge into triangle</div>
+          <div class="legend-item"><span class="swatch" style="background:#7dd87d"></span>Square: stable, attracts stable, may merge into hex</div>
+          <div class="legend-item"><span class="swatch" style="background:#f4a261"></span>Triangle: unstable, attracts unstable, decays into circle</div>
+          <div class="legend-item"><span class="swatch" style="background:#e76f51"></span>Hex: unstable, attracts unstable, decays into square</div>
         </div>
 
         <div style="height:12px"></div>
@@ -251,23 +251,15 @@
     };
 
     const species = {
-      circle: { color: "#5bc0eb", sides: 0, baseRadius: 7, speed: 1.1, mergeBias: 0.20 },
-      square: { color: "#7dd87d", sides: 4, baseRadius: 9, speed: 0.9, mergeBias: 0.34 },
-      triangle: { color: "#f4a261", sides: 3, baseRadius: 8, speed: 1.4, mergeBias: 0.25 },
-      hex: { color: "#e76f51", sides: 6, baseRadius: 11, speed: 1.0, mergeBias: 0.5 }
+      circle: { color: "#5bc0eb", sides: 0, baseRadius: 7, speed: 1.1, state: "stable" },
+      square: { color: "#7dd87d", sides: 4, baseRadius: 9, speed: 0.9, state: "stable" },
+      triangle: { color: "#f4a261", sides: 3, baseRadius: 8, speed: 1.4, state: "unstable" },
+      hex: { color: "#e76f51", sides: 6, baseRadius: 11, speed: 1.0, state: "unstable" }
     };
 
-    const pairRules = {
-      "circle:circle": { force: 0.55, mergeChance: 0.10, result: "circle" },
-      "circle:square": { force: 0.95, mergeChance: 0.24, result: "hex" },
-      "circle:triangle": { force: -1.1, mergeChance: 0.05, result: "triangle" },
-      "circle:hex": { force: 0.45, mergeChance: 0.16, result: "hex" },
-      "square:square": { force: -0.65, mergeChance: 0.14, result: "square" },
-      "square:triangle": { force: 1.15, mergeChance: 0.28, result: "hex" },
-      "square:hex": { force: -0.85, mergeChance: 0.08, result: "hex" },
-      "triangle:triangle": { force: -1.35, mergeChance: 0.09, result: "triangle" },
-      "triangle:hex": { force: 0.9, mergeChance: 0.22, result: "hex" },
-      "hex:hex": { force: -0.25, mergeChance: 0.18, result: "hex" }
+    const mergeRules = {
+      "circle:circle": { chance: 0.18, result: "triangle", bounceMultiplier: 2 },
+      "square:square": { chance: 0.18, result: "hex", bounceMultiplier: 2 }
     };
 
     let sim;
@@ -281,6 +273,10 @@
       if (roll < 0.34) return "circle";
       if (roll < 0.67) return "square";
       return "triangle";
+    }
+
+    function stableStateOf(kind) {
+      return species[kind].state;
     }
 
     function resize() {
@@ -321,18 +317,7 @@
       return [aKind, bKind].sort().join(":");
     }
 
-    function ruleFor(a, b) {
-      return pairRules[pairKey(a.kind, b.kind)] ?? { force: 0, mergeChance: 0.04, result: "hex" };
-    }
-
-    function mergedKind(a, b, rule) {
-      if (a.generation + b.generation > 7) return "hex";
-      if (a.kind === "hex" || b.kind === "hex") return "hex";
-      return rule.result;
-    }
-
-    function mergeEntities(a, b, rule) {
-      const kind = mergedKind(a, b, rule);
+    function mergeEntities(a, b, kind) {
       const merged = createEntity(kind, Math.max(a.generation, b.generation) + 1, (a.x + b.x) / 2, (a.y + b.y) / 2);
       merged.radius = Math.min(28, Math.sqrt(a.radius * a.radius + b.radius * b.radius) * 0.82);
       merged.energy = Math.min(160, a.energy + b.energy * 0.6);
@@ -342,21 +327,30 @@
       return merged;
     }
 
-    function splitEntity(entity) {
-      if (entity.generation < 3 || entity.energy < 115 || Math.random() > 0.004) {
-        return [entity];
-      }
+    function retuneEntity(entity, nextKind) {
+      const spec = species[nextKind];
+      const speed = Math.hypot(entity.vx, entity.vy) || spec.speed;
+      entity.kind = nextKind;
+      entity.generation = Math.max(1, entity.generation - 1);
+      entity.radius = spec.baseRadius + entity.generation * 0.8 + rand(-1.2, 1.2);
+      entity.energy = Math.max(35, entity.energy * 0.7);
+      entity.cooldown = 18;
+      entity.vx = (entity.vx / speed) * spec.speed * rand(0.85, 1.2);
+      entity.vy = (entity.vy / speed) * spec.speed * rand(0.85, 1.2);
+    }
 
-      const childKind = entity.kind === "hex" ? pickBaseKind() : entity.kind;
-      const offset = entity.radius * 0.8;
-      const childA = createEntity(childKind, Math.max(1, entity.generation - 1), entity.x - offset, entity.y);
-      const childB = createEntity(childKind, Math.max(1, entity.generation - 1), entity.x + offset, entity.y);
-      childA.vx += rand(-1.4, -0.4);
-      childB.vx += rand(0.4, 1.4);
-      childA.vy += rand(-1, 1);
-      childB.vy += rand(-1, 1);
-      pushLog(`${entity.kind} split into two ${childKind}s`);
-      return [childA, childB];
+    function decayTarget(kind) {
+      if (kind === "triangle") return "circle";
+      if (kind === "hex") return "square";
+      return kind;
+    }
+
+    function decayEntity(entity, reason) {
+      const oldKind = entity.kind;
+      const nextKind = decayTarget(entity.kind);
+      if (nextKind === entity.kind) return;
+      retuneEntity(entity, nextKind);
+      pushLog(`${oldKind} decayed into ${nextKind}${reason ? " via " + reason : ""}`);
     }
 
     function drawEntity(entity) {
@@ -416,11 +410,12 @@
       const distSq = dx * dx + dy * dy;
       const dist = Math.sqrt(distSq) || 0.001;
       const minDist = a.radius + b.radius;
-      const rule = ruleFor(a, b);
+      const sameState = stableStateOf(a.kind) === stableStateOf(b.kind);
+      const forceSign = sameState ? 1 : -1;
 
       if (dist < 180) {
         const distanceFactor = 1 - dist / 180;
-        const force = rule.force * sim.chaos * 0.07 * distanceFactor;
+        const force = forceSign * sim.chaos * 0.09 * distanceFactor;
         const fx = (dx / dist) * force;
         const fy = (dy / dist) * force;
         a.vx += fx;
@@ -428,8 +423,8 @@
         b.vx -= fx;
         b.vy -= fy;
 
-        if (rule.force < 0 && dist < 70) {
-          const repelBoost = Math.abs(rule.force) * sim.chaos * 0.09 * (1 - dist / 70);
+        if (!sameState && dist < 80) {
+          const repelBoost = sim.chaos * 0.13 * (1 - dist / 80);
           a.vx -= (dx / dist) * repelBoost;
           a.vy -= (dy / dist) * repelBoost;
           b.vx += (dx / dist) * repelBoost;
@@ -448,20 +443,25 @@
         b.x += nx * overlap;
         b.y += ny * overlap;
 
-        const impulse = 0.9;
+        let impulse = 0.9;
         const dvx = b.vx - a.vx;
         const dvy = b.vy - a.vy;
+        const mergeRule = mergeRules[pairKey(a.kind, b.kind)];
+
+        if (pairKey(a.kind, b.kind) === "hex:triangle") {
+          decayEntity(a, "hex-triangle collision");
+          decayEntity(b, "hex-triangle collision");
+        } else if (mergeRule && a.cooldown <= 0 && b.cooldown <= 0 && Math.random() < mergeRule.chance) {
+          return mergeEntities(a, b, mergeRule.result);
+        } else if (mergeRule) {
+          impulse *= mergeRule.bounceMultiplier;
+        }
+
         const impact = (dvx * nx + dvy * ny) * impulse;
         a.vx += impact * nx;
         a.vy += impact * ny;
         b.vx -= impact * nx;
         b.vy -= impact * ny;
-
-        const generationBoost = (a.generation + b.generation) * 0.015;
-        const mergeChance = rule.mergeChance + generationBoost + (species[a.kind].mergeBias + species[b.kind].mergeBias) * 0.03;
-        if (a.cooldown <= 0 && b.cooldown <= 0 && Math.random() < mergeChance) {
-          return mergeEntities(a, b, rule);
-        }
       }
 
       return null;
@@ -484,8 +484,12 @@
       entity.x += entity.vx;
       entity.y += entity.vy;
       entity.age += 1;
-      entity.energy -= 0.05 + entity.generation * 0.01;
+      const unstable = stableStateOf(entity.kind) === "unstable";
+      entity.energy -= unstable ? 0.18 + entity.generation * 0.03 : 0.03;
       entity.cooldown -= 1;
+      if (unstable && (entity.energy <= 20 || Math.random() < 0.0015)) {
+        decayEntity(entity, "instability");
+      }
       bounce(entity);
     }
 
@@ -545,14 +549,6 @@
       }
 
       let next = entities.filter(entity => !removed.has(entity.id) && entity.energy > 0 && entity.age < 5000);
-      for (const entity of next) {
-        const result = splitEntity(entity);
-        if (result.length === 2) {
-          removed.add(entity.id);
-          additions.push(...result);
-        }
-      }
-      next = next.filter(entity => !removed.has(entity.id));
       next.push(...additions);
 
       if (next.length < 8) {
