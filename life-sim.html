@@ -418,14 +418,23 @@
       const minDist = a.radius + b.radius;
       const rule = ruleFor(a, b);
 
-      if (dist < 110) {
-        const force = rule.force * sim.chaos * 0.0032;
+      if (dist < 180) {
+        const distanceFactor = 1 - dist / 180;
+        const force = rule.force * sim.chaos * 0.07 * distanceFactor;
         const fx = (dx / dist) * force;
         const fy = (dy / dist) * force;
         a.vx += fx;
         a.vy += fy;
         b.vx -= fx;
         b.vy -= fy;
+
+        if (rule.force < 0 && dist < 70) {
+          const repelBoost = Math.abs(rule.force) * sim.chaos * 0.09 * (1 - dist / 70);
+          a.vx -= (dx / dist) * repelBoost;
+          a.vy -= (dy / dist) * repelBoost;
+          b.vx += (dx / dist) * repelBoost;
+          b.vy += (dy / dist) * repelBoost;
+        }
       }
 
       if (dist < minDist) {
@@ -459,9 +468,11 @@
     }
 
     function updateEntity(entity) {
-      const jitter = sim.chaos * 0.02;
+      const jitter = sim.chaos * 0.012;
       entity.vx += rand(-jitter, jitter);
       entity.vy += rand(-jitter, jitter);
+      entity.vx *= 0.992;
+      entity.vy *= 0.992;
 
       const cap = 2.8 + entity.generation * 0.1;
       const speed = Math.hypot(entity.vx, entity.vy);
