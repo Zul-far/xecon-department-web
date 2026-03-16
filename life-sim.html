@@ -220,10 +220,10 @@
         </div>
 
         <div class="legend">
-          <div class="legend-item"><span class="swatch" style="background:#5bc0eb"></span>Circle: stable, attracts stable, may merge into triangle</div>
-          <div class="legend-item"><span class="swatch" style="background:#7dd87d"></span>Square: stable, attracts stable, may merge into hex</div>
-          <div class="legend-item"><span class="swatch" style="background:#f4a261"></span>Triangle: unstable, attracts unstable, decays into circle</div>
-          <div class="legend-item"><span class="swatch" style="background:#e76f51"></span>Hex: unstable, attracts unstable, decays into square</div>
+          <div class="legend-item"><span class="swatch" style="background:#5bc0eb"></span>Blue blob: stable, attracts stable, may merge into orange unstable</div>
+          <div class="legend-item"><span class="swatch" style="background:#7dd87d"></span>Green blob: stable, attracts stable, may merge into red unstable</div>
+          <div class="legend-item"><span class="swatch" style="background:#f4a261"></span>Orange blob: unstable, attracts unstable, decays into blue stable</div>
+          <div class="legend-item"><span class="swatch" style="background:#e76f51"></span>Red blob: unstable, attracts unstable, decays into green stable</div>
         </div>
 
         <div style="height:12px"></div>
@@ -251,10 +251,10 @@
     };
 
     const species = {
-      circle: { color: "#5bc0eb", sides: 0, baseRadius: 7, speed: 1.1, state: "stable" },
-      square: { color: "#7dd87d", sides: 4, baseRadius: 9, speed: 0.9, state: "stable" },
-      triangle: { color: "#f4a261", sides: 3, baseRadius: 8, speed: 1.4, state: "unstable" },
-      hex: { color: "#e76f51", sides: 6, baseRadius: 11, speed: 1.0, state: "unstable" }
+      circle: { color: "#5bc0eb", baseRadius: 7, speed: 1.1, state: "stable" },
+      square: { color: "#7dd87d", baseRadius: 9, speed: 0.9, state: "stable" },
+      triangle: { color: "#f4a261", baseRadius: 8, speed: 1.4, state: "unstable" },
+      hex: { color: "#e76f51", baseRadius: 11, speed: 1.0, state: "unstable" }
     };
 
     const mergeRules = {
@@ -359,32 +359,24 @@
 
     function drawEntity(entity) {
       const spec = species[entity.kind];
-      ctx.save();
-      ctx.translate(entity.x, entity.y);
-      ctx.rotate(entity.age * 0.01);
-      ctx.fillStyle = spec.color;
-      ctx.globalAlpha = 0.78;
-      ctx.shadowBlur = 18;
-      ctx.shadowColor = spec.color;
+      const radius = entity.radius;
+      const gradient = ctx.createRadialGradient(
+        entity.x,
+        entity.y,
+        0,
+        entity.x,
+        entity.y,
+        radius
+      );
 
-      if (spec.sides === 0) {
-        ctx.beginPath();
-        ctx.arc(0, 0, entity.radius, 0, Math.PI * 2);
-        ctx.fill();
-      } else {
-        ctx.beginPath();
-        for (let i = 0; i < spec.sides; i += 1) {
-          const angle = (Math.PI * 2 * i) / spec.sides - Math.PI / 2;
-          const px = Math.cos(angle) * entity.radius;
-          const py = Math.sin(angle) * entity.radius;
-          if (i === 0) ctx.moveTo(px, py);
-          else ctx.lineTo(px, py);
-        }
-        ctx.closePath();
-        ctx.fill();
-      }
+      gradient.addColorStop(0, spec.color + "cc");
+      gradient.addColorStop(0.55, spec.color + "55");
+      gradient.addColorStop(1, spec.color + "00");
 
-      ctx.restore();
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(entity.x, entity.y, radius, 0, Math.PI * 2);
+      ctx.fill();
     }
 
     function bounce(entity) {
