@@ -6,14 +6,13 @@
   <title>Shape Life Sim</title>
   <style>
     :root {
-      --bg0: #08111b;
-      --bg1: #0f2130;
       --panel: rgba(10, 19, 29, 0.78);
       --line: rgba(176, 215, 255, 0.15);
       --text: #e7f3ff;
       --muted: #9db2c6;
       --accent: #5bc0eb;
       --accent2: #f4a261;
+      --blur-strength: 0px;
     }
 
     * {
@@ -25,105 +24,61 @@
       min-height: 100vh;
       font-family: "Segoe UI", Tahoma, sans-serif;
       color: var(--text);
-      background:
-        radial-gradient(circle at 20% 20%, rgba(91, 192, 235, 0.12), transparent 26%),
-        radial-gradient(circle at 80% 0%, rgba(244, 162, 97, 0.14), transparent 22%),
-        linear-gradient(180deg, var(--bg1), var(--bg0));
+      background: #000;
     }
 
-    .wrap {
-      width: min(1200px, calc(100% - 24px));
-      margin: 18px auto;
-    }
-
-    .topbar {
+    .toolbar {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      z-index: 10;
       display: flex;
       gap: 16px;
       align-items: center;
-      justify-content: space-between;
-      margin-bottom: 14px;
       padding: 16px 18px;
       border: 1px solid var(--line);
       border-radius: 20px;
       background: var(--panel);
       backdrop-filter: blur(10px);
-    }
-
-    .title h1 {
-      margin: 0;
-      font-size: 1.8rem;
-    }
-
-    .title p {
-      margin: 4px 0 0;
-      color: var(--muted);
-      font-size: 0.95rem;
-    }
-
-    .layout {
-      display: grid;
-      grid-template-columns: 1fr 320px;
-      gap: 14px;
-    }
-
-    .stage,
-    .panel {
-      border: 1px solid var(--line);
-      border-radius: 20px;
-      background: var(--panel);
-      backdrop-filter: blur(10px);
-      overflow: hidden;
+      flex-wrap: wrap;
     }
 
     .stage {
       position: relative;
-      min-height: 70vh;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: #000;
     }
 
     canvas {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
       display: block;
       width: 100%;
       height: 100%;
-      background:
-        linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px),
-        radial-gradient(circle at center, rgba(91, 192, 235, 0.07), transparent 55%);
-      background-size: 28px 28px, 28px 28px, auto;
+      background: transparent;
     }
 
-    .panel {
-      padding: 16px;
-    }
-
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-      margin-bottom: 14px;
-    }
-
-    .card {
-      padding: 12px;
-      border-radius: 14px;
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255,255,255,0.07);
-    }
-
-    .card strong {
-      display: block;
-      font-size: 1.15rem;
-      margin-top: 4px;
+    .blur-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      backdrop-filter: blur(var(--blur-strength));
+      background: rgba(0, 0, 0, 0.01);
     }
 
     .controls {
-      display: grid;
+      display: flex;
+      align-items: end;
+      flex-wrap: wrap;
       gap: 10px;
-      margin-bottom: 14px;
     }
 
-    button,
-    input[type="range"] {
-      width: 100%;
+    .field {
+      min-width: 150px;
     }
 
     button {
@@ -140,6 +95,16 @@
       background: linear-gradient(180deg, var(--accent2), #c4732e);
     }
 
+    input[type="number"] {
+      width: 100%;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font: inherit;
+      color: var(--text);
+      background: rgba(255,255,255,0.04);
+    }
+
     label {
       display: grid;
       gap: 6px;
@@ -147,89 +112,36 @@
       font-size: 0.92rem;
     }
 
-    .legend,
-    .log {
-      display: grid;
-      gap: 8px;
-    }
-
-    .legend-item,
-    .log-item {
-      padding: 10px 12px;
-      border-radius: 12px;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.07);
-      font-size: 0.92rem;
-    }
-
-    .swatch {
-      display: inline-block;
-      width: 10px;
-      height: 10px;
-      border-radius: 999px;
-      margin-right: 8px;
-      vertical-align: middle;
-    }
-
     @media (max-width: 980px) {
-      .layout {
-        grid-template-columns: 1fr;
-      }
-
-      .stage {
-        min-height: 58vh;
+      .toolbar {
+        right: 16px;
       }
     }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <section class="topbar">
-      <div class="title">
-        <h1>Shape Life Sim</h1>
-        <p>Random moving forms collide, bond, split, and evolve into more complex patterns.</p>
-      </div>
-    </section>
+  <div class="toolbar">
+    <div class="controls">
+      <button id="toggleBtn">Pause</button>
+      <button id="resetBtn" class="alt">Reset World</button>
+      <label class="field">
+        Spawn Count
+        <input id="spawnInput" type="number" min="15" max="120" step="1" value="45">
+      </label>
+      <label class="field">
+        Chaos
+        <input id="chaosInput" type="number" min="0.2" max="1.6" step="0.1" value="0.8">
+      </label>
+      <label class="field">
+        Blur
+        <input id="blurInput" type="number" min="0" max="40" step="1" value="0">
+      </label>
+    </div>
+  </div>
 
-    <section class="layout">
-      <div class="stage">
-        <canvas id="world"></canvas>
-      </div>
-
-      <aside class="panel">
-        <div class="stats">
-          <div class="card">Entities<strong id="entityCount">0</strong></div>
-          <div class="card">Collisions<strong id="collisionCount">0</strong></div>
-          <div class="card">Merges<strong id="mergeCount">0</strong></div>
-          <div class="card">Generation<strong id="generationCount">1</strong></div>
-        </div>
-
-        <div class="controls">
-          <button id="toggleBtn">Pause</button>
-          <button id="resetBtn" class="alt">Reset World</button>
-
-          <label>
-            Spawn Count: <span id="spawnValue">45</span>
-            <input id="spawnSlider" type="range" min="15" max="120" value="45">
-          </label>
-
-          <label>
-            Chaos: <span id="chaosValue">0.80</span>
-            <input id="chaosSlider" type="range" min="20" max="160" value="80">
-          </label>
-        </div>
-
-        <div class="legend">
-          <div class="legend-item"><span class="swatch" style="background:#5bc0eb"></span>Blue blob: stable, attracts stable, may merge into orange unstable</div>
-          <div class="legend-item"><span class="swatch" style="background:#7dd87d"></span>Green blob: stable, attracts stable, may merge into red unstable</div>
-          <div class="legend-item"><span class="swatch" style="background:#f4a261"></span>Orange blob: unstable, attracts unstable, decays into blue stable</div>
-          <div class="legend-item"><span class="swatch" style="background:#e76f51"></span>Red blob: unstable, attracts unstable, decays into green stable</div>
-        </div>
-
-        <div style="height:12px"></div>
-        <div class="log" id="log"></div>
-      </aside>
-    </section>
+  <div class="stage">
+    <canvas id="world"></canvas>
+    <div class="blur-layer" id="blurLayer"></div>
   </div>
 
   <script>
@@ -237,24 +149,19 @@
     const ctx = canvas.getContext("2d");
 
     const ui = {
-      entityCount: document.getElementById("entityCount"),
-      collisionCount: document.getElementById("collisionCount"),
-      mergeCount: document.getElementById("mergeCount"),
-      generationCount: document.getElementById("generationCount"),
       toggleBtn: document.getElementById("toggleBtn"),
       resetBtn: document.getElementById("resetBtn"),
-      spawnSlider: document.getElementById("spawnSlider"),
-      spawnValue: document.getElementById("spawnValue"),
-      chaosSlider: document.getElementById("chaosSlider"),
-      chaosValue: document.getElementById("chaosValue"),
-      log: document.getElementById("log")
+      spawnInput: document.getElementById("spawnInput"),
+      chaosInput: document.getElementById("chaosInput"),
+      blurInput: document.getElementById("blurInput"),
+      blurLayer: document.getElementById("blurLayer")
     };
 
     const species = {
-      circle: { color: "#5bc0eb", baseRadius: 7, speed: 1.1, state: "stable" },
-      square: { color: "#7dd87d", baseRadius: 9, speed: 0.9, state: "stable" },
-      triangle: { color: "#f4a261", baseRadius: 8, speed: 1.4, state: "unstable" },
-      hex: { color: "#e76f51", baseRadius: 11, speed: 1.0, state: "unstable" }
+      circle: { color: "#ffffff", baseRadius: 7, speed: 1.1, state: "stable" },
+      square: { color: "#ffffff", baseRadius: 9, speed: 0.9, state: "stable" },
+      triangle: { color: "#ffffff", baseRadius: 8, speed: 1.4, state: "unstable" },
+      hex: { color: "#ffffff", baseRadius: 11, speed: 1.0, state: "unstable" }
     };
 
     const mergeRules = {
@@ -279,6 +186,12 @@
       return species[kind].state;
     }
 
+    function decayLifetimeFrames(kind) {
+      if (kind === "hex") return rand(5, 10) * 60;
+      if (kind === "triangle") return rand(10, 20) * 60;
+      return Number.POSITIVE_INFINITY;
+    }
+
     function resize() {
       const rect = canvas.parentElement.getBoundingClientRect();
       canvas.width = rect.width * window.devicePixelRatio;
@@ -291,7 +204,7 @@
     function createEntity(kind, generation = 1, x, y) {
       const spec = species[kind];
       const angle = rand(0, Math.PI * 2);
-      const radius = spec.baseRadius + generation * 0.8 + rand(-1.2, 1.2);
+      const radius = (spec.baseRadius + generation * 0.8 + rand(-1.2, 1.2)) * 2;
       return {
         id: crypto.randomUUID(),
         kind,
@@ -303,14 +216,14 @@
         radius,
         energy: rand(40, 100),
         age: 0,
-        cooldown: 0
+        cooldown: 0,
+        decayAt: decayLifetimeFrames(kind)
       };
     }
 
     function pushLog(text) {
       sim.log.unshift(text);
       sim.log = sim.log.slice(0, 8);
-      ui.log.innerHTML = sim.log.map(item => `<div class="log-item">${item}</div>`).join("");
     }
 
     function pairKey(aKind, bKind) {
@@ -344,7 +257,7 @@
       const dy = Math.sin(angle) * spread;
       const childA = createEntity(nextKind, generation, entity.x - dx, entity.y - dy);
       const childB = createEntity(nextKind, generation, entity.x + dx, entity.y + dy);
-      const repel = 2.8;
+      const repel = 14;
       childA.vx = entity.vx * 0.3 - Math.cos(angle) * repel;
       childA.vy = entity.vy * 0.3 - Math.sin(angle) * repel;
       childB.vx = entity.vx * 0.3 + Math.cos(angle) * repel;
@@ -359,7 +272,7 @@
 
     function drawEntity(entity) {
       const spec = species[entity.kind];
-      const radius = entity.radius;
+      const radius = entity.radius * 10;
       const gradient = ctx.createRadialGradient(
         entity.x,
         entity.y,
@@ -444,12 +357,28 @@
         const dvy = b.vy - a.vy;
         const mergeRule = mergeRules[pairKey(a.kind, b.kind)];
 
-        if (pairKey(a.kind, b.kind) === "hex:triangle") {
+        if (pairKey(a.kind, b.kind) === "circle:hex") {
+          const blue = a.kind === "circle" ? a : b;
+          const red = a.kind === "hex" ? a : b;
+          const launch = 3.6;
+          blue.vx -= nx * launch;
+          blue.vy -= ny * launch;
           return {
-            removeIds: [a.id, b.id],
+            removeIds: [red.id],
             additions: [
-              ...decayEntity(a, "hex-triangle collision"),
-              ...decayEntity(b, "hex-triangle collision")
+              ...decayEntity(red, "blue-red collision")
+            ]
+          };
+        } else if (pairKey(a.kind, b.kind) === "square:triangle") {
+          const green = a.kind === "square" ? a : b;
+          const orange = a.kind === "triangle" ? a : b;
+          const launch = 3.6;
+          green.vx -= nx * launch;
+          green.vy -= ny * launch;
+          return {
+            removeIds: [orange.id],
+            additions: [
+              ...decayEntity(orange, "green-orange collision")
             ]
           };
         } else if (mergeRule && a.cooldown <= 0 && b.cooldown <= 0 && Math.random() < mergeRule.chance) {
@@ -488,10 +417,8 @@
       entity.x += entity.vx;
       entity.y += entity.vy;
       entity.age += 1;
-      const unstable = stableStateOf(entity.kind) === "unstable";
-      entity.energy -= unstable ? 0.18 + entity.generation * 0.03 : 0.03;
       entity.cooldown -= 1;
-      if (unstable && (entity.energy <= 20 || Math.random() < 0.0015)) {
+      if (entity.age >= entity.decayAt) {
         return decayEntity(entity, "instability");
       }
       bounce(entity);
@@ -504,7 +431,7 @@
       sim.merges = 0;
       sim.generationPeak = 1;
       sim.log = [];
-      const count = Number(ui.spawnSlider.value);
+      const count = Number(ui.spawnInput.value);
       for (let i = 0; i < count; i += 1) {
         sim.entities.push(createEntity(pickBaseKind()));
       }
@@ -518,7 +445,7 @@
         collisions: 0,
         merges: 0,
         generationPeak: 1,
-        chaos: Number(ui.chaosSlider.value) / 100,
+        chaos: Number(ui.chaosInput.value),
         log: []
       };
       spawnWorld();
@@ -564,7 +491,7 @@
       next.push(...additions);
 
       if (next.length < 8) {
-        const refill = Math.max(4, Math.floor(Number(ui.spawnSlider.value) * 0.15));
+        const refill = Math.max(4, Math.floor(Number(ui.spawnInput.value) * 0.15));
         for (let i = 0; i < refill; i += 1) next.push(createEntity(pickBaseKind()));
         pushLog(`population collapsed, spawned ${refill} new entities`);
       }
@@ -574,11 +501,6 @@
       for (const entity of sim.entities) {
         drawEntity(entity);
       }
-
-      ui.entityCount.textContent = sim.entities.length;
-      ui.collisionCount.textContent = sim.collisions;
-      ui.mergeCount.textContent = sim.merges;
-      ui.generationCount.textContent = sim.generationPeak;
     }
 
     function frame() {
@@ -593,19 +515,25 @@
 
     ui.resetBtn.addEventListener("click", resetSim);
 
-    ui.spawnSlider.addEventListener("input", () => {
-      ui.spawnValue.textContent = ui.spawnSlider.value;
+    ui.spawnInput.addEventListener("change", () => {
+      const next = Math.max(15, Math.min(120, Number(ui.spawnInput.value) || 45));
+      ui.spawnInput.value = String(next);
     });
 
-    ui.chaosSlider.addEventListener("input", () => {
-      ui.chaosValue.textContent = (Number(ui.chaosSlider.value) / 100).toFixed(2);
-      sim.chaos = Number(ui.chaosSlider.value) / 100;
+    ui.chaosInput.addEventListener("change", () => {
+      const next = Math.max(0.2, Math.min(1.6, Number(ui.chaosInput.value) || 0.8));
+      ui.chaosInput.value = next.toFixed(1);
+      sim.chaos = next;
+    });
+
+    ui.blurInput.addEventListener("change", () => {
+      const next = Math.max(0, Math.min(40, Number(ui.blurInput.value) || 0));
+      ui.blurInput.value = String(next);
+      ui.blurLayer.style.setProperty("--blur-strength", `${next}px`);
     });
 
     window.addEventListener("resize", resize);
-
-    ui.spawnValue.textContent = ui.spawnSlider.value;
-    ui.chaosValue.textContent = (Number(ui.chaosSlider.value) / 100).toFixed(2);
+    ui.blurLayer.style.setProperty("--blur-strength", `${Number(ui.blurInput.value) || 0}px`);
     resize();
     resetSim();
     frame();
