@@ -126,11 +126,11 @@
       <button id="resetBtn" class="alt">Reset World</button>
       <label class="field">
         Spawn Count
-        <input id="spawnInput" type="number" min="15" max="120" step="1" value="45">
+        <input id="spawnInput" type="number" min="15" max="120" step="1" value="18">
       </label>
       <label class="field">
         Chaos
-        <input id="chaosInput" type="number" min="0.2" max="1.6" step="0.1" value="0.8">
+        <input id="chaosInput" type="number" min="0.2" max="1.6" step="0.1" value="1.6">
       </label>
       <label class="field">
         Blur
@@ -282,14 +282,14 @@
         radius
       );
 
+      ctx.globalCompositeOperation = "lighter";
+
       gradient.addColorStop(0, spec.color + "cc");
       gradient.addColorStop(0.55, spec.color + "55");
       gradient.addColorStop(1, spec.color + "00");
 
       ctx.fillStyle = gradient;
-      ctx.beginPath();
-      ctx.arc(entity.x, entity.y, radius, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.fillRect(entity.x - radius, entity.y - radius, radius * 2, radius * 2);
     }
 
     function bounce(entity) {
@@ -516,12 +516,12 @@
     ui.resetBtn.addEventListener("click", resetSim);
 
     ui.spawnInput.addEventListener("change", () => {
-      const next = Math.max(15, Math.min(120, Number(ui.spawnInput.value) || 45));
+      const next = Math.max(15, Math.min(120, Number(ui.spawnInput.value) || 15));
       ui.spawnInput.value = String(next);
     });
 
     ui.chaosInput.addEventListener("change", () => {
-      const next = Math.max(0.2, Math.min(1.6, Number(ui.chaosInput.value) || 0.8));
+      const next = Math.max(0.2, Math.min(1.6, Number(ui.chaosInput.value) || 1.6));
       ui.chaosInput.value = next.toFixed(1);
       sim.chaos = next;
     });
