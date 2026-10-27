@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#030712">
+  <title>Gallery | Xecon Department</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+    body {
+      background:
+        radial-gradient(ellipse at 54% 53%, rgba(114, 82, 157, 0.18), transparent 42%),
+        radial-gradient(ellipse at 22% 70%, rgba(45, 100, 135, 0.13), transparent 50%),
+        radial-gradient(ellipse at 78% 22%, rgba(91, 87, 150, 0.16), transparent 44%),
+        linear-gradient(145deg, #070b19, #0d1023 55%, #030711);
+      color: #eef4ff;
+      font-family: "Bahnschrift", "Franklin Gothic Medium", sans-serif;
+    }
+    canvas { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    .gallery-title {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      margin: 0;
+      padding: 80px 24px;
+      pointer-events: none;
+      color: #f3edf9;
+      font-family: "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+      font-size: clamp(4.25rem, 12vw, 11rem);
+      font-weight: 400;
+      font-style: italic;
+      line-height: 1.15;
+      letter-spacing: 0.055em;
+      text-indent: 0.055em;
+      text-shadow:
+        0 0 22px rgba(223, 204, 255, 0.36),
+        0 0 65px rgba(174, 144, 226, 0.28),
+        0 5px 40px rgba(8, 9, 27, 0.65);
+    }
+    .back {
+      position: fixed;
+      top: max(24px, env(safe-area-inset-top));
+      left: max(24px, env(safe-area-inset-left));
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 48px;
+      padding: 12px 19px;
+      border: 1px solid rgba(209, 224, 255, 0.25);
+      border-radius: 999px;
+      background: rgba(7, 13, 26, 0.72);
+      color: inherit;
+      text-decoration: none;
+      font-size: 14px;
+      letter-spacing: 0.04em;
+      backdrop-filter: blur(12px);
+      transition: background 180ms ease, border-color 180ms ease;
+    }
+    .back:hover { background: rgba(26, 39, 63, 0.9); border-color: rgba(209, 224, 255, 0.6); }
+    .back:focus-visible { outline: 2px solid #d6e6ff; outline-offset: 5px; }
+    .back svg { width: 18px; height: 18px; }
+    @media (max-width: 600px) {
+      .gallery-title {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      margin: 0;
+      padding: 80px 24px;
+      pointer-events: none;
+      color: #f3edf9;
+      font-family: "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+      font-size: clamp(4.25rem, 12vw, 11rem);
+      font-weight: 400;
+      font-style: italic;
+      line-height: 1.15;
+      letter-spacing: 0.055em;
+      text-indent: 0.055em;
+      text-shadow:
+        0 0 22px rgba(223, 204, 255, 0.36),
+        0 0 65px rgba(174, 144, 226, 0.28),
+        0 5px 40px rgba(8, 9, 27, 0.65);
+    }
+    .back { top: max(18px, env(safe-area-inset-top)); left: max(18px, env(safe-area-inset-left)); }
+    }
+    @media (prefers-reduced-motion: reduce) { .back { transition: none; } }
+  </style>
+</head>
+<body>
+  <canvas id="sky" aria-hidden="true"></canvas>
+  <main aria-labelledby="gallery-title">
+    <h1 id="gallery-title" class="gallery-title">Gallery</h1>
+    <a class="back" href="./life-sim.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5M11 18l-6-6 6-6"/>
+      </svg>
+      Back to main page
+    </a>
+  </main>
+  <script>
+    (() => {
+      const canvas = document.getElementById("sky");
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+      const TAU = Math.PI * 2;
+      const rotationSpeed = 0.018;
+      const colors = ["211,226,255", "238,243,255", "255,233,208"];
+      let width = 0, height = 0, stars = [], meteors = [];
+      let rotation = 0, skyTime = 0, lastTime = null, frameId = null;
+      let nextMeteor = 2 + Math.random() * 3;
+
+      const random = (min, max) => min + Math.random() * (max - min);
+
+      function resize() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = Math.round(width * dpr);
+        canvas.height = Math.round(height * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        // Cover every corner throughout the rotation, including on narrow screens.
+        const radius = Math.hypot(width * 0.72, height * 0.72);
+        const count = Math.min(2800, Math.max(650, Math.round(Math.PI * radius * radius / 1500)));
+        stars = Array.from({ length: count }, () => ({
+          radius: Math.sqrt(Math.random()) * radius,
+          angle: random(0, TAU),
+          size: Math.pow(Math.random(), 3) * 1.35 + 0.35,
+          alpha: random(0.25, 0.85),
+          phase: random(0, TAU),
+          color: colors[Math.floor(Math.random() * colors.length)]
+        }));
+        meteors = [];
+        draw();
+      }
+
+      function spawnMeteor() {
+        const angle = random(0.5, 0.85);
+        const speed = random(650, 1000);
+        meteors.push({
+          x: random(-width * 0.15, width * 0.8),
+          y: random(-height * 0.12, height * 0.38),
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          length: random(100, 210),
+          age: 0,
+          lifetime: random(0.7, 1.15)
+        });
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, width, height);
+        const poleX = width * 0.68;
+        const poleY = height * 0.28;
+        for (const star of stars) {
+          const angle = star.angle + rotation;
+          const x = poleX + Math.cos(angle) * star.radius;
+          const y = poleY + Math.sin(angle) * star.radius;
+          if (x < -4 || y < -4 || x > width + 4 || y > height + 4) continue;
+          const shimmer = reducedMotion.matches ? 1 : 0.9 + Math.sin(skyTime * 0.65 + star.phase) * 0.1;
+          ctx.strokeStyle = 'rgba(' + star.color + ',' + star.alpha * shimmer * 0.24 + ')';
+          ctx.lineWidth = star.size * 0.8;
+          // Short curved exposures make the shared celestial rotation visible.
+          if (!reducedMotion.matches && star.radius > 12) {
+            ctx.beginPath();
+            ctx.arc(poleX, poleY, star.radius, angle - rotationSpeed * 0.35, angle);
+            ctx.stroke();
+          }
+          ctx.fillStyle = 'rgba(' + star.color + ',' + star.alpha * shimmer + ')';
+          ctx.beginPath();
+          ctx.arc(x, y, star.size, 0, TAU);
+          ctx.fill();
+          if (star.size > 1.35) {
+            ctx.fillStyle = 'rgba(' + star.color + ',0.06)';
+            ctx.beginPath();
+            ctx.arc(x, y, star.size * 3, 0, TAU);
+            ctx.fill();
+          }
+        }
+        for (const meteor of meteors) {
+          const speed = Math.hypot(meteor.vx, meteor.vy);
+          const tailX = meteor.x - meteor.vx / speed * meteor.length;
+          const tailY = meteor.y - meteor.vy / speed * meteor.length;
+          const opacity = Math.min(1, meteor.age / 0.08) * Math.max(0, 1 - meteor.age / meteor.lifetime);
+          const gradient = ctx.createLinearGradient(tailX, tailY, meteor.x, meteor.y);
+          gradient.addColorStop(0, "rgba(144,185,255,0)");
+          gradient.addColorStop(0.75, 'rgba(184,214,255,' + opacity * 0.45 + ')');
+          gradient.addColorStop(1, 'rgba(245,250,255,' + opacity + ')');
+          ctx.strokeStyle = gradient;
+          ctx.lineWidth = 1.6;
+          ctx.lineCap = "round";
+          ctx.beginPath();
+          ctx.moveTo(tailX, tailY);
+          ctx.lineTo(meteor.x, meteor.y);
+          ctx.stroke();
+        }
+      }
+
+      function animate(time) {
+        frameId = null;
+        if (document.hidden || reducedMotion.matches) return;
+        const dt = lastTime === null ? 0 : Math.min((time - lastTime) / 1000, 0.05);
+        lastTime = time;
+        skyTime += dt;
+        rotation = (rotation + dt * rotationSpeed) % TAU;
+        nextMeteor -= dt;
+        if (nextMeteor <= 0) {
+          spawnMeteor();
+          nextMeteor = random(5, 12);
+        }
+        for (const meteor of meteors) {
+          meteor.age += dt;
+          meteor.x += meteor.vx * dt;
+          meteor.y += meteor.vy * dt;
+        }
+        meteors = meteors.filter(meteor => meteor.age < meteor.lifetime);
+        draw();
+        frameId = requestAnimationFrame(animate);
+      }
+
+      function syncAnimation() {
+        if (frameId !== null) cancelAnimationFrame(frameId);
+        frameId = null;
+        lastTime = null;
+        if (reducedMotion.matches) meteors = [];
+        draw();
+        if (!document.hidden && !reducedMotion.matches) frameId = requestAnimationFrame(animate);
+      }
+
+      window.addEventListener("resize", resize);
+      document.addEventListener("visibilitychange", syncAnimation);
+      reducedMotion.addEventListener("change", syncAnimation);
+      resize();
+      syncAnimation();
+    })();
+  </script>
+</body>
+</html>
+

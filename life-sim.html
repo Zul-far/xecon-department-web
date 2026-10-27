@@ -3,50 +3,124 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Shape Life Sim</title>
+  <title>Welcome to the Xecon Department</title>
   <style>
     :root {
-      --panel: rgba(10, 19, 29, 0.78);
-      --line: rgba(176, 215, 255, 0.15);
-      --text: #e7f3ff;
-      --muted: #9db2c6;
-      --accent: #5bc0eb;
-      --accent2: #f4a261;
-      --blur-strength: 0px;
+      --outline: rgba(245, 249, 255, 0.95);
     }
 
     * {
       box-sizing: border-box;
     }
 
+    html,
     body {
       margin: 0;
-      min-height: 100vh;
-      font-family: "Segoe UI", Tahoma, sans-serif;
-      color: var(--text);
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
       background: #000;
     }
 
-    .toolbar {
+    .welcome {
       position: fixed;
-      top: 16px;
-      left: 16px;
-      z-index: 10;
+      inset: 0;
+      z-index: 1;
+      display: grid;
+      place-items: center;
+      padding: 5vw;
+      pointer-events: none;
+    }
+
+    .welcome-title {
+      --stroke-width: 1.5px;
+      margin: 0;
+      isolation: isolate;
+      font-family: "Bahnschrift", "Franklin Gothic Medium", sans-serif;
+      font-weight: 700;
+      text-align: center;
+      text-transform: uppercase;
+      color: transparent;
+      -webkit-text-stroke: var(--stroke-width) var(--outline);
+    }
+
+    .welcome-content {
+      display: grid;
+      justify-items: center;
+      gap: clamp(24px, 4vh, 48px);
+    }
+
+    .destinations {
       display: flex;
+      justify-content: center;
       gap: 16px;
-      align-items: center;
-      padding: 16px 18px;
-      border: 1px solid var(--line);
-      border-radius: 20px;
-      background: var(--panel);
-      backdrop-filter: blur(10px);
-      flex-wrap: wrap;
+    }
+
+    .destination-link {
+      pointer-events: auto;
+      min-width: 130px;
+      padding: 16px 28px;
+      border: 1px solid rgba(245, 249, 255, 0.65);
+      background: rgba(0, 0, 0, 0.78);
+      color: #f5f9ff;
+      font: 600 14px "Bahnschrift", "Franklin Gothic Medium", sans-serif;
+      letter-spacing: 0.16em;
+      text-align: center;
+      text-decoration: none;
+      text-transform: uppercase;
+      transition: background 150ms ease, border-color 150ms ease;
+    }
+
+    .destination-link:hover {
+      background: #000;
+      border-color: #fff;
+    }
+
+    .destination-link:focus-visible {
+      outline: 2px solid #fff;
+      outline-offset: 4px;
+    }
+
+    .welcome-title span {
+      position: relative;
+      display: block;
+      white-space: nowrap;
+    }
+
+    .welcome-title span::before {
+      content: attr(data-text);
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      -webkit-text-stroke: calc(var(--stroke-width) + 2px) rgba(0, 0, 0, 0.8);
+    }
+
+    .welcome-intro {
+      --stroke-width: 1px;
+      margin-bottom: 0.6em;
+      font-size: clamp(1rem, 3.5vw, 3.75rem);
+      line-height: 1.2;
+      letter-spacing: 0.22em;
+      -webkit-text-stroke-width: var(--stroke-width);
+    }
+
+    .welcome-name {
+      font-size: clamp(4.5rem, min(24vw, 38vh), 25rem);
+      line-height: 0.94;
+      letter-spacing: 0.015em;
+    }
+
+    .welcome-department {
+      margin-top: 0.15em;
+      font-size: clamp(1.75rem, min(11.8vw, 19vh), 12.5rem);
+      line-height: 1.05;
+      letter-spacing: 0.025em;
     }
 
     .stage {
-      position: relative;
-      width: 100vw;
-      height: 100vh;
+      position: fixed;
+      inset: 0;
+      z-index: 0;
       overflow: hidden;
       background: #000;
     }
@@ -61,107 +135,50 @@
       background: transparent;
     }
 
-    .blur-layer {
-      position: absolute;
-      inset: 0;
-      z-index: 1;
-      pointer-events: none;
-      backdrop-filter: blur(var(--blur-strength));
-      background: rgba(0, 0, 0, 0.01);
-    }
-
-    .controls {
-      display: flex;
-      align-items: end;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    .field {
-      min-width: 150px;
-    }
-
-    button {
-      border: 0;
-      border-radius: 12px;
-      padding: 12px 14px;
-      font: inherit;
-      color: white;
-      background: linear-gradient(180deg, var(--accent), #2f80b8);
-      cursor: pointer;
-    }
-
-    button.alt {
-      background: linear-gradient(180deg, var(--accent2), #c4732e);
-    }
-
-    input[type="number"] {
-      width: 100%;
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 12px;
-      padding: 12px 14px;
-      font: inherit;
-      color: var(--text);
-      background: rgba(255,255,255,0.04);
-    }
-
-    label {
-      display: grid;
-      gap: 6px;
-      color: var(--muted);
-      font-size: 0.92rem;
-    }
-
-    @media (max-width: 980px) {
-      .toolbar {
-        right: 16px;
+    @media (max-width: 600px) {
+      .welcome-title {
+        --stroke-width: 1px;
       }
+    }
+
+    @media (max-height: 500px) and (min-width: 601px) {
+      .welcome-intro { font-size: 1rem; }
+      .welcome-name { font-size: min(24vw, 28vh); }
+      .welcome-department { font-size: min(11.8vw, 14vh); }
+      .welcome-content { gap: 20px; }
     }
   </style>
 </head>
 <body>
-  <div class="toolbar">
-    <div class="controls">
-      <button id="toggleBtn">Pause</button>
-      <button id="resetBtn" class="alt">Reset World</button>
-      <label class="field">
-        Spawn Count
-        <input id="spawnInput" type="number" min="15" max="120" step="1" value="18">
-      </label>
-      <label class="field">
-        Chaos
-        <input id="chaosInput" type="number" min="0.2" max="1.6" step="0.1" value="1.6">
-      </label>
-      <label class="field">
-        Blur
-        <input id="blurInput" type="number" min="0" max="40" step="1" value="0">
-      </label>
+  <main class="welcome">
+    <div class="welcome-content">
+    <h1 class="welcome-title" aria-label="Welcome to the Xecon Department">
+      <span class="welcome-intro" data-text="Welcome to the" aria-hidden="true">Welcome to the</span>
+      <span class="welcome-name" data-text="Xecon" aria-hidden="true">Xecon</span>
+      <span class="welcome-department" data-text="Department" aria-hidden="true">Department</span>
+    </h1>
+    <nav class="destinations" aria-label="Explore Xecon">
+      <a class="destination-link" href="orbital-defense.html">Game</a>
+      <a class="destination-link" href="gallery.html">Gallery</a>
+    </nav>
     </div>
-  </div>
+  </main>
 
   <div class="stage">
-    <canvas id="world"></canvas>
-    <div class="blur-layer" id="blurLayer"></div>
+    <canvas id="world" aria-hidden="true"></canvas>
   </div>
 
   <script>
     const canvas = document.getElementById("world");
     const ctx = canvas.getContext("2d");
 
-    const ui = {
-      toggleBtn: document.getElementById("toggleBtn"),
-      resetBtn: document.getElementById("resetBtn"),
-      spawnInput: document.getElementById("spawnInput"),
-      chaosInput: document.getElementById("chaosInput"),
-      blurInput: document.getElementById("blurInput"),
-      blurLayer: document.getElementById("blurLayer")
-    };
+    const SETTINGS = Object.freeze({ spawnCount: 18, chaos: 1.6, collisionScale: 2, blobScale: 40 });
 
     const species = {
-      circle: { color: "#ffffff", baseRadius: 7, speed: 1.1, state: "stable" },
-      square: { color: "#ffffff", baseRadius: 9, speed: 0.9, state: "stable" },
-      triangle: { color: "#ffffff", baseRadius: 8, speed: 1.4, state: "unstable" },
-      hex: { color: "#ffffff", baseRadius: 11, speed: 1.0, state: "unstable" }
+      circle: { color: "#3f8fb1", baseRadius: 7, speed: 1.1, state: "stable" },
+      square: { color: "#24988d", baseRadius: 9, speed: 0.9, state: "stable" },
+      triangle: { color: "#bd7a43", baseRadius: 8, speed: 1.4, state: "unstable" },
+      hex: { color: "#b14f3d", baseRadius: 11, speed: 1.0, state: "unstable" }
     };
 
     const mergeRules = {
@@ -169,7 +186,16 @@
       "square:square": { chance: 0.18, result: "hex", bounceMultiplier: 2 }
     };
 
+    const MOTION_SPEED = 2;
+    const PHYSICS_STEP = 1 / 120;
+    const SPRITE_RADIUS = 128;
+    const SPRITE_PADDING = 2;
+    const blobSprites = Object.fromEntries(
+      Object.entries(species).map(([kind, spec]) => [kind, createBlobSprite(spec.color)])
+    );
     let sim;
+    let lastFrameTime = null;
+    let accumulatedTime = 0;
 
     function rand(min, max) {
       return Math.random() * (max - min) + min;
@@ -182,13 +208,17 @@
       return "triangle";
     }
 
+    function pickUnstableKind() {
+      return Math.random() < 0.5 ? "triangle" : "hex";
+    }
+
     function stableStateOf(kind) {
       return species[kind].state;
     }
 
-    function decayLifetimeFrames(kind) {
-      if (kind === "hex") return rand(5, 10) * 60;
-      if (kind === "triangle") return rand(10, 20) * 60;
+    function decayLifetimeSeconds(kind) {
+      if (kind === "hex") return rand(5, 10);
+      if (kind === "triangle") return rand(10, 20);
       return Number.POSITIVE_INFINITY;
     }
 
@@ -199,12 +229,13 @@
       canvas.style.width = rect.width + "px";
       canvas.style.height = rect.height + "px";
       ctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
+      if (sim) render();
     }
 
     function createEntity(kind, generation = 1, x, y) {
       const spec = species[kind];
       const angle = rand(0, Math.PI * 2);
-      const radius = (spec.baseRadius + generation * 0.8 + rand(-1.2, 1.2)) * 2;
+      const radius = (spec.baseRadius + generation * 0.8 + rand(-1.2, 1.2)) * sim.collisionScale;
       return {
         id: crypto.randomUUID(),
         kind,
@@ -217,7 +248,8 @@
         energy: rand(40, 100),
         age: 0,
         cooldown: 0,
-        decayAt: decayLifetimeFrames(kind)
+        burstSpeed: 0,
+        decayAt: decayLifetimeSeconds(kind)
       };
     }
 
@@ -266,30 +298,34 @@
       childB.energy = Math.max(40, entity.energy * 0.45);
       childA.cooldown = 32;
       childB.cooldown = 32;
+      childA.burstSpeed = repel;
+      childB.burstSpeed = repel;
       pushLog(`${oldKind} decayed into ${nextKind}${reason ? " via " + reason : ""}`);
       return [childA, childB];
     }
 
+    function createBlobSprite(color) {
+      // Cache the fade once. Transparent padding prevents a hard texture edge.
+      const sprite = document.createElement("canvas");
+      const center = SPRITE_RADIUS + SPRITE_PADDING;
+      sprite.width = sprite.height = center * 2;
+      const spriteCtx = sprite.getContext("2d");
+      const gradient = spriteCtx.createRadialGradient(center, center, 0, center, center, SPRITE_RADIUS);
+      gradient.addColorStop(0, color + "aa");
+      gradient.addColorStop(0.35, color + "4a");
+      gradient.addColorStop(0.7, color + "14");
+      gradient.addColorStop(0.9, color + "04");
+      gradient.addColorStop(1, color + "00");
+      spriteCtx.fillStyle = gradient;
+      spriteCtx.fillRect(0, 0, sprite.width, sprite.height);
+      return sprite;
+    }
+
     function drawEntity(entity) {
-      const spec = species[entity.kind];
-      const radius = entity.radius * 10;
-      const gradient = ctx.createRadialGradient(
-        entity.x,
-        entity.y,
-        0,
-        entity.x,
-        entity.y,
-        radius
-      );
-
-      ctx.globalCompositeOperation = "lighter";
-
-      gradient.addColorStop(0, spec.color + "cc");
-      gradient.addColorStop(0.55, spec.color + "55");
-      gradient.addColorStop(1, spec.color + "00");
-
-      ctx.fillStyle = gradient;
-      ctx.fillRect(entity.x - radius, entity.y - radius, radius * 2, radius * 2);
+      const radius = entity.radius * sim.blobScale;
+      const paddedRadius = radius * (SPRITE_RADIUS + SPRITE_PADDING) / SPRITE_RADIUS;
+      ctx.drawImage(blobSprites[entity.kind], entity.x - paddedRadius, entity.y - paddedRadius,
+        paddedRadius * 2, paddedRadius * 2);
     }
 
     function bounce(entity) {
@@ -298,55 +334,54 @@
 
       if (entity.x < entity.radius) {
         entity.x = entity.radius;
-        entity.vx *= -1;
+        entity.vx = Math.abs(entity.vx);
       } else if (entity.x > width - entity.radius) {
         entity.x = width - entity.radius;
-        entity.vx *= -1;
+        entity.vx = -Math.abs(entity.vx);
       }
 
       if (entity.y < entity.radius) {
         entity.y = entity.radius;
-        entity.vy *= -1;
+        entity.vy = Math.abs(entity.vy);
       } else if (entity.y > height - entity.radius) {
         entity.y = height - entity.radius;
-        entity.vy *= -1;
+        entity.vy = -Math.abs(entity.vy);
       }
     }
 
-    function interact(a, b) {
+    function interact(a, b, motionStep = 1) {
       const dx = b.x - a.x;
       const dy = b.y - a.y;
       const distSq = dx * dx + dy * dy;
-      const dist = Math.sqrt(distSq) || 0.001;
+      const dist = Math.sqrt(distSq);
+      const nx = dist > 0 ? dx / dist : 1;
+      const ny = dist > 0 ? dy / dist : 0;
       const minDist = a.radius + b.radius;
       const sameState = stableStateOf(a.kind) === stableStateOf(b.kind);
       const forceSign = sameState ? 1 : -1;
 
       if (dist < 180) {
         const distanceFactor = 1 - dist / 180;
-        const force = forceSign * sim.chaos * 0.09 * distanceFactor;
-        const fx = (dx / dist) * force;
-        const fy = (dy / dist) * force;
+        const force = forceSign * sim.chaos * 0.09 * distanceFactor * motionStep;
+        const fx = nx * force;
+        const fy = ny * force;
         a.vx += fx;
         a.vy += fy;
         b.vx -= fx;
         b.vy -= fy;
 
         if (!sameState && dist < 80) {
-          const repelBoost = sim.chaos * 0.13 * (1 - dist / 80);
-          a.vx -= (dx / dist) * repelBoost;
-          a.vy -= (dy / dist) * repelBoost;
-          b.vx += (dx / dist) * repelBoost;
-          b.vy += (dy / dist) * repelBoost;
+          const repelBoost = sim.chaos * 0.13 * (1 - dist / 80) * motionStep;
+          a.vx -= nx * repelBoost;
+          a.vy -= ny * repelBoost;
+          b.vx += nx * repelBoost;
+          b.vy += ny * repelBoost;
         }
       }
 
       if (dist < minDist) {
         sim.collisions += 1;
         const overlap = (minDist - dist) * 0.5;
-        const nx = dx / dist;
-        const ny = dy / dist;
-
         a.x -= nx * overlap;
         a.y -= ny * overlap;
         b.x += nx * overlap;
@@ -361,8 +396,10 @@
           const blue = a.kind === "circle" ? a : b;
           const red = a.kind === "hex" ? a : b;
           const launch = 3.6;
-          blue.vx -= nx * launch;
-          blue.vy -= ny * launch;
+          const direction = blue === a ? -1 : 1;
+          blue.vx += nx * launch * direction;
+          blue.vy += ny * launch * direction;
+          blue.burstSpeed = Math.max(blue.burstSpeed, launch);
           return {
             removeIds: [red.id],
             additions: [
@@ -373,8 +410,10 @@
           const green = a.kind === "square" ? a : b;
           const orange = a.kind === "triangle" ? a : b;
           const launch = 3.6;
-          green.vx -= nx * launch;
-          green.vy -= ny * launch;
+          const direction = green === a ? -1 : 1;
+          green.vx += nx * launch * direction;
+          green.vy += ny * launch * direction;
+          green.burstSpeed = Math.max(green.burstSpeed, launch);
           return {
             removeIds: [orange.id],
             additions: [
@@ -390,7 +429,8 @@
           impulse *= mergeRule.bounceMultiplier;
         }
 
-        const impact = (dvx * nx + dvy * ny) * impulse;
+        // Separate overlaps without pulling already departing particles together.
+        const impact = Math.min(0, dvx * nx + dvy * ny) * impulse;
         a.vx += impact * nx;
         a.vy += impact * ny;
         b.vx -= impact * nx;
@@ -400,24 +440,27 @@
       return null;
     }
 
-    function updateEntity(entity) {
-      const jitter = sim.chaos * 0.012;
+    function updateEntity(entity, deltaSeconds) {
+      const motionStep = deltaSeconds * 60 * MOTION_SPEED;
+      const jitter = sim.chaos * 0.012 * Math.sqrt(motionStep);
       entity.vx += rand(-jitter, jitter);
       entity.vy += rand(-jitter, jitter);
-      entity.vx *= 0.992;
-      entity.vy *= 0.992;
+      const drag = Math.pow(0.992, motionStep);
+      entity.vx *= drag;
+      entity.vy *= drag;
 
-      const cap = 2.8 + entity.generation * 0.1;
+      const cap = 2.8 + entity.generation * 0.1 + entity.burstSpeed;
       const speed = Math.hypot(entity.vx, entity.vy);
       if (speed > cap) {
         entity.vx = (entity.vx / speed) * cap;
         entity.vy = (entity.vy / speed) * cap;
       }
 
-      entity.x += entity.vx;
-      entity.y += entity.vy;
-      entity.age += 1;
-      entity.cooldown -= 1;
+      entity.x += entity.vx * motionStep;
+      entity.y += entity.vy * motionStep;
+      entity.burstSpeed *= Math.pow(0.97, motionStep);
+      entity.age += deltaSeconds;
+      entity.cooldown = Math.max(0, entity.cooldown - deltaSeconds * 60);
       if (entity.age >= entity.decayAt) {
         return decayEntity(entity, "instability");
       }
@@ -431,11 +474,11 @@
       sim.merges = 0;
       sim.generationPeak = 1;
       sim.log = [];
-      const count = Number(ui.spawnInput.value);
+      const count = sim.spawnCount;
       for (let i = 0; i < count; i += 1) {
-        sim.entities.push(createEntity(pickBaseKind()));
+        sim.entities.push(createEntity(pickUnstableKind()));
       }
-      pushLog(`seeded ${count} base entities`);
+      pushLog(`seeded ${count} unstable entities`);
     }
 
     function resetSim() {
@@ -445,34 +488,38 @@
         collisions: 0,
         merges: 0,
         generationPeak: 1,
-        chaos: Number(ui.chaosInput.value),
+        ...SETTINGS,
         log: []
       };
       spawnWorld();
+      lastFrameTime = null;
+      accumulatedTime = 0;
+      render();
     }
 
-    function step() {
-      ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
-
+    function advancePhysics(deltaSeconds) {
+      const motionStep = deltaSeconds * 60 * MOTION_SPEED;
       const entities = sim.entities;
       const additions = [];
       const removed = new Set();
+
+      // Advance all positions to the same time before resolving pairs.
+      for (const entity of entities) {
+        const decayChildren = updateEntity(entity, deltaSeconds);
+        if (decayChildren) {
+          removed.add(entity.id);
+          additions.push(...decayChildren);
+        }
+      }
 
       for (let i = 0; i < entities.length; i += 1) {
         const a = entities[i];
         if (removed.has(a.id)) continue;
 
-        const decayChildren = updateEntity(a);
-        if (decayChildren) {
-          removed.add(a.id);
-          additions.push(...decayChildren);
-          continue;
-        }
-
         for (let j = i + 1; j < entities.length; j += 1) {
           const b = entities[j];
           if (removed.has(b.id)) continue;
-          const outcome = interact(a, b);
+          const outcome = interact(a, b, motionStep);
           if (outcome) {
             for (const id of outcome.removeIds) removed.add(id);
             additions.push(...outcome.additions);
@@ -491,52 +538,63 @@
       next.push(...additions);
 
       if (next.length < 8) {
-        const refill = Math.max(4, Math.floor(Number(ui.spawnInput.value) * 0.15));
+        const refill = Math.max(4, Math.floor(sim.spawnCount * 0.15));
         for (let i = 0; i < refill; i += 1) next.push(createEntity(pickBaseKind()));
         pushLog(`population collapsed, spawned ${refill} new entities`);
       }
 
       sim.entities = next.slice(0, 260);
+    }
 
+    function step(deltaSeconds) {
+      // Shorter steps keep fast decay fragments from skipping small bodies.
+      let remaining = deltaSeconds;
+      while (remaining > 1e-9) {
+        let smallestRadius = Infinity;
+        let fastestSpeed = 0;
+        for (const entity of sim.entities) {
+          smallestRadius = Math.min(smallestRadius, entity.radius);
+          const cap = 2.8 + entity.generation * 0.1 + entity.burstSpeed;
+          fastestSpeed = Math.max(fastestSpeed, Math.min(cap, Math.hypot(entity.vx, entity.vy)));
+        }
+        const safeStep = smallestRadius * 0.5 / Math.max(1, fastestSpeed * 60 * MOTION_SPEED);
+        const duration = Math.min(remaining, safeStep);
+        advancePhysics(duration);
+        remaining -= duration;
+      }
+    }
+
+    function render() {
+      ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+      ctx.globalCompositeOperation = "lighter";
       for (const entity of sim.entities) {
         drawEntity(entity);
       }
     }
 
-    function frame() {
-      if (!sim.paused) step();
+    function frame(timestamp) {
+      if (lastFrameTime === null) lastFrameTime = timestamp;
+      const elapsed = Math.min(0.1, Math.max(0, (timestamp - lastFrameTime) / 1000));
+      lastFrameTime = timestamp;
+      if (!sim.paused) {
+        accumulatedTime += elapsed;
+        while (accumulatedTime + 1e-9 >= PHYSICS_STEP) {
+          step(PHYSICS_STEP);
+          accumulatedTime = Math.max(0, accumulatedTime - PHYSICS_STEP);
+        }
+        render();
+      }
       requestAnimationFrame(frame);
     }
 
-    ui.toggleBtn.addEventListener("click", () => {
-      sim.paused = !sim.paused;
-      ui.toggleBtn.textContent = sim.paused ? "Resume" : "Pause";
-    });
-
-    ui.resetBtn.addEventListener("click", resetSim);
-
-    ui.spawnInput.addEventListener("change", () => {
-      const next = Math.max(15, Math.min(120, Number(ui.spawnInput.value) || 15));
-      ui.spawnInput.value = String(next);
-    });
-
-    ui.chaosInput.addEventListener("change", () => {
-      const next = Math.max(0.2, Math.min(1.6, Number(ui.chaosInput.value) || 1.6));
-      ui.chaosInput.value = next.toFixed(1);
-      sim.chaos = next;
-    });
-
-    ui.blurInput.addEventListener("change", () => {
-      const next = Math.max(0, Math.min(40, Number(ui.blurInput.value) || 0));
-      ui.blurInput.value = String(next);
-      ui.blurLayer.style.setProperty("--blur-strength", `${next}px`);
-    });
-
     window.addEventListener("resize", resize);
-    ui.blurLayer.style.setProperty("--blur-strength", `${Number(ui.blurInput.value) || 0}px`);
+    document.addEventListener("visibilitychange", () => {
+      lastFrameTime = null;
+      accumulatedTime = 0;
+    });
     resize();
     resetSim();
-    frame();
+    requestAnimationFrame(frame);
   </script>
 </body>
 </html>
