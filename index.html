@@ -226,7 +226,7 @@
     function resize() {
       visualRadiusScale = window.matchMedia(
         "(max-width: 600px), (pointer: coarse) and (max-height: 600px)"
-      ).matches ? 0.1 : 1;
+      ).matches ? 0.4 : 1;
       const rect = canvas.parentElement.getBoundingClientRect();
       canvas.width = rect.width * window.devicePixelRatio;
       canvas.height = rect.height * window.devicePixelRatio;
