@@ -194,6 +194,7 @@
       Object.entries(species).map(([kind, spec]) => [kind, createBlobSprite(spec.color)])
     );
     let sim;
+    let visualRadiusScale = 1;
     let lastFrameTime = null;
     let accumulatedTime = 0;
 
@@ -223,6 +224,9 @@
     }
 
     function resize() {
+      visualRadiusScale = window.matchMedia(
+        "(max-width: 600px), (pointer: coarse) and (max-height: 600px)"
+      ).matches ? 0.1 : 1;
       const rect = canvas.parentElement.getBoundingClientRect();
       canvas.width = rect.width * window.devicePixelRatio;
       canvas.height = rect.height * window.devicePixelRatio;
@@ -322,7 +326,7 @@
     }
 
     function drawEntity(entity) {
-      const radius = entity.radius * sim.blobScale;
+      const radius = entity.radius * sim.blobScale * visualRadiusScale;
       const paddedRadius = radius * (SPRITE_RADIUS + SPRITE_PADDING) / SPRITE_RADIUS;
       ctx.drawImage(blobSprites[entity.kind], entity.x - paddedRadius, entity.y - paddedRadius,
         paddedRadius * 2, paddedRadius * 2);
