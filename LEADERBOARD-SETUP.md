@@ -1,5 +1,15 @@
 # Orbital Defense leaderboard
 
+## Updating an existing leaderboard to 33 waves
+
+Before publishing the updated game, run `leaderboard-upgrade-33-waves.sql` in
+Supabase SQL Editor. This preserves every existing score, labels old runs as
+10-wave campaigns, and allows 33-wave results. Then publish the updated
+`orbital-defense.html` and `orbital-leaderboard.js` together. The game sends its
+campaign length explicitly, and old cached clients remain compatible.
+For an existing database, use this migration instead of rerunning the fresh
+installation script below. New projects should use `leaderboard-setup.sql`.
+
 The game is configured for Supabase project `mabsifxswbqhzpnjyodn`.
 Only its browser-safe publishable key is included in the website.
 

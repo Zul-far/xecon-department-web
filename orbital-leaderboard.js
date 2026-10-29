@@ -38,12 +38,12 @@
     $('refreshScores').disabled = true;
     $('leaderboardStatus').textContent = 'Loading scores…';
     try {
-      const entries = await request(API + '?select=run_id,player_name,score,wave,outcome&order=score.desc,wave.desc,created_at.asc,run_id.asc&limit=20');
+      const entries = await request(API + '?select=run_id,player_name,score,wave,outcome,campaign_waves&order=score.desc,wave.desc,created_at.asc,run_id.asc&limit=20');
       const rows = document.createDocumentFragment();
       entries.forEach((entry, index) => {
         const row = document.createElement('tr');
         if (entry.run_id === latestId) row.dataset.latest = 'true';
-        [index + 1, entry.player_name, Number(entry.score).toLocaleString(), entry.wave + ' / 10', entry.outcome === 'won' ? 'Saved Earth' : 'Lost'].forEach(value => {
+        [index + 1, entry.player_name, Number(entry.score).toLocaleString(), entry.wave + ' / ' + (entry.campaign_waves || 10), entry.outcome === 'won' ? (entry.campaign_waves === 33 ? 'Saved SAM' : 'Legacy win') : 'Lost'].forEach(value => {
           const cell = document.createElement('td');
           cell.textContent = String(value);
           row.append(cell);
@@ -93,7 +93,7 @@
       return;
     }
     // Keep the same ID and payload on retries, including after a lost response.
-    current.payload ||= { run_id: current.run_id, player_name: name, score: current.score, wave: current.wave, outcome: current.outcome };
+    current.payload ||= { run_id: current.run_id, player_name: name, score: current.score, wave: current.wave, outcome: current.outcome, campaign_waves: current.campaign_waves || 33 };
     current.pending = true;
     $('submitScore').disabled = true;
     $('pilotName').disabled = true;
