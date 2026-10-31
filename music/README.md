@@ -24,7 +24,11 @@ when the page first opens. The volume slider starts at 45%.
 ## GitHub Pages, other static hosting, or opening gallery.html directly
 
 Browsers cannot automatically list files in a website folder. After changing
-the music files, run this command to generate the playlist:
+the music files, Windows users can double-click `update-music.cmd` in the
+`xecon-department` folder. This generates the playlist using built-in PowerShell;
+Node.js is not required for this option.
+
+Alternatively, if Node.js is installed, run:
 
 ```sh
 node music-server.cjs --index
